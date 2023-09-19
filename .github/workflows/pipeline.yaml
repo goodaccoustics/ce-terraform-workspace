@@ -64,6 +64,6 @@ jobs:
     - name: Initialize Terraform
       run: terraform init
     - name: Terraform Select Workspace (${{ inputs.environment }})
-      run: terraform workspace select ${{ inputs.environment }}
+      run: terraform workspace select ${{ inputs.environment }} || terraform workspace new ${{ inputs.environment }}
     - name: Terraform Destroy (${{ inputs.environment }})
       run: terraform destroy --auto-approve
