@@ -66,4 +66,4 @@ jobs:
     - name: Terraform Select Workspace (${{ inputs.environment }})
       run: terraform workspace select ${{ inputs.environment }} || terraform workspace new ${{ inputs.environment }}
     - name: Terraform Destroy (${{ inputs.environment }})
-      run: terraform destroy --auto-approve
+      run: terraform destroy -var-file=${{ inputs.environment }}.tfvars --auto-approve
