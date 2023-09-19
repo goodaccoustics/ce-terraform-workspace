@@ -1,0 +1,69 @@
+name: Provision or Destroy Resources
+on:
+  workflow_dispatch:
+    inputs:
+      type:
+        description: 'Provision or Destroy Resources'
+        required: true
+        default: 'destroy'
+        type: choice
+        options:
+          - provision
+          - destroy
+      environment:
+        description: 'Resources Environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - uat
+          - prod
+
+jobs:
+  provision-resources:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.type == 'provision' }} 
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v1
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: "us-east-1"
+    - name: Initialize Terraform
+      run: terraform init
+    - name: Terraform Validate
+      id: validate
+      run: terraform validate -no-color
+    - name: Terraform Select Workspace (${{ inputs.environment }})
+      run: terraform workspace select ${{ inputs.environment }} || terraform workspace new ${{ inputs.environment }}
+    - name: Terraform Plan (${{ inputs.environment }})
+      run: terraform plan -var-file=${{ inputs.environment }}.tfvars
+    - name: Terraform Apply (${{ inputs.environment }})
+      run: terraform apply -var-file=${{ inputs.environment }}.tfvars --auto-approve
+
+  destroy-resources:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.type == 'destroy' }} 
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v1
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: "us-east-1"
+    - name: Initialize Terraform
+      run: terraform init
+    - name: Terraform Select Workspace (${{ inputs.environment }})
+      run: terraform workspace select ${{ inputs.environment }}
+    - name: Terraform Destroy (${{ inputs.environment }})
+      run: terraform destroy --auto-approve
